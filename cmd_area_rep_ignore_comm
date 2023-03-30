@@ -1,0 +1,52 @@
+function widget:GetInfo()
+    return {
+        name	= "Area Repair Ignore Commander",
+        desc	= "Area repair ignores commander to help front line pushing",
+        author  = "ShoX",
+        date 	= "March 2023",
+        license	= "w/e",
+        layer 	= 0,
+        enabled	= true
+    }
+end
+
+function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
+    if not cmdOptions.meta or cmdID ~= CMD.REPAIR then
+        return false
+    end
+	
+    local repairingUnits = Spring.GetSelectedUnits()
+    local x, y, z, r = unpack(cmdParams)
+    local unitsToRepair = Spring.GetUnitsInSphere(x, y, z, r)
+    
+    -- exclude commander units from the list
+    local commanderIDs = {}
+    local commanderDefs = {
+        UnitDefNames.armcom.id,
+        UnitDefNames.corcom.id
+    }
+    for _, defID in pairs(commanderDefs) do
+        local commanderID = Spring.GetTeamUnitsByDefs(Spring.GetMyTeamID(), defID)[1]
+        if commanderID then
+            table.insert(commanderIDs, commanderID)
+        end
+    end
+    for i = #unitsToRepair, 1, -1 do
+        for j = 1, #commanderIDs do
+            if unitsToRepair[i] == commanderIDs[j] then
+                table.remove(unitsToRepair, i)
+                break
+            end
+        end
+    end
+    
+    local orders = {}
+
+    for i, unit in pairs(unitsToRepair) do
+        table.insert(orders, { CMD.REPAIR, unit, { shift = i > 1 or cmdOptions["shift"] } })
+    end
+
+    Spring.GiveOrderArrayToUnitArray(repairingUnits, orders)
+
+    return true
+end
