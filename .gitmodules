@@ -1,0 +1,3 @@
+[submodule "BAR_widgets"]
+	path = BAR_widgets
+	url = https://github.com/zxbc/BAR_widgets.git
